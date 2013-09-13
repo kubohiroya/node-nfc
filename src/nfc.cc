@@ -4,6 +4,8 @@
 #include <v8.h>
 #include <node.h>
 #include <node_buffer.h>
+#include <string.h>
+
 using namespace v8;
 using namespace node;
 
@@ -91,8 +93,8 @@ namespace {
         Baton* baton = static_cast<Baton*>(req->data);
 
         const nfc_modulation nmMifare = {
-            nmt = NMT_ISO14443A,
-            nbr = NBR_106,
+            .nmt = NMT_ISO14443A,
+            .nbr = NBR_106,
         };
 
         baton->error = true;
