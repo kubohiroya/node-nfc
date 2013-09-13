@@ -158,4 +158,6 @@ namespace {
         target->Set(String::NewSymbol("NFC"), t->GetFunction());
     }
 
+    NODE_MODULE(nfc, init)
+
 }
