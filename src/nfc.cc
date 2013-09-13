@@ -92,10 +92,7 @@ namespace {
 
         Baton* baton = static_cast<Baton*>(req->data);
 
-        const nfc_modulation nmMifare = {
-            .nmt = NMT_ISO14443A,
-            .nbr = NBR_106,
-        };
+        const nfc_modulation nmMifare = { NMT_ISO14443A, NBR_106 };
 
         baton->error = true;
 
