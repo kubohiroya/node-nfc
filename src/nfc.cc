@@ -141,7 +141,7 @@ namespace {
 
             Handle<Value> argg[2] = {
                 String::New("jumanji"),
-                String::New('Dinosaur')
+                String::New("Dinosaur")
             };
 
             MakeCallback(baton->callback, "emit", 2, argg);
