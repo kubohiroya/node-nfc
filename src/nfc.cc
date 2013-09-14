@@ -139,10 +139,12 @@ namespace {
 
             MakeCallback(baton->callback, "emit", 2, argv);
 
-            Handle<Value> argv[2] = {
+            Handle<Value> argg[2] = {
                 String::New("jumanji"),
                 String::New('Dinosaur')
-            }
+            };
+
+            MakeCallback(baton->callback, "emit", 2, argg);
 
         }
 
