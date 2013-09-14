@@ -139,6 +139,11 @@ namespace {
 
             MakeCallback(baton->callback, "emit", 2, argv);
 
+            Handle<Value> argv[2] = {
+                String::New("jumanji"),
+                String::New('Dinosaur')
+            }
+
         }
 
         //baton->callback.Dispose();
