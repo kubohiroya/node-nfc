@@ -92,23 +92,38 @@ namespace {
 
         Baton* baton = static_cast<Baton*>(req->data);
 
-        const nfc_modulation nmMifare = { NMT_ISO14443A, NBR_106 };
+        const nfc_modulation nmModulations[2] = {{ NMT_ISO14443A, NBR_106 },{ .nmt = NMT_FELICA, .nbr = NBR_212 }};
+        const size_t szModulations = 2;
 
         baton->error = true;
 
         //unsigned int last_int = 0;
-        if (nfc_initiator_select_passive_target(baton->pnd, nmMifare, NULL, 0, &baton->nt) > 0) {
+        for (size_t i = 0; i < szModulations; i++) {
+          if (nfc_initiator_select_passive_target(baton->pnd, nmModulations[i], NULL, 0, &baton->nt) > 0) {
             baton->error = false;
+            break;
             //unsigned int hex_int = conv_dword_to_int(baton->nt.nti.nai.abtUid);
             //if (hex_int != last_int) {
             //last_int = hex_int;
             //}
+          }
         }
 
         //nfc_close(pnd);
         //nfc_exit(context);
 
     }
+
+v8::Local<v8::Object> makeBuffer(uint8_t* rawData, size_t length){
+  HandleScope scope;
+  const char* _rawData = reinterpret_cast<const char*>(rawData);
+  Local<node::Buffer> bp = node::Buffer::New(_rawData, length);
+  v8::Local<v8::Object> globalObj = v8::Context::GetCurrent()->Global();
+  v8::Local<v8::Function> bufferConstructor = v8::Local<v8::Function>::Cast(globalObj->Get(v8::String::New("Buffer")));
+  v8::Handle<v8::Value> constructorArgs[3] = { bp->handle_, v8::Integer::New(length), v8::Integer::New(0) };
+  v8::Local<v8::Object> actualBuffer = bufferConstructor->NewInstance(3, constructorArgs);
+  return scope.Close(actualBuffer);
+}
 
     void AfterNFCRead(uv_work_t* req) {
 
@@ -118,33 +133,29 @@ namespace {
 
         if (!baton->error) {
 
-            int length = baton->nt.nti.nai.szUidLen;
-            uint8_t* rawData = baton->nt.nti.nai.abtUid;
-            //char buffer [length];
-            //sprintf(buffer, "%02x %02x %02x %02x", rawData[0], rawData[1], rawData[2], rawData[3]);
+          //char buffer [length];
+          //sprintf(buffer, "%02x %02x %02x %02x", rawData[0], rawData[1], rawData[2], rawData[3]);
 
-            node::Buffer *bp = node::Buffer::New(length);
-            memcpy(node::Buffer::Data(bp), rawData, length);
-            v8::Local<v8::Object> globalObj = v8::Context::GetCurrent()->Global();
-            v8::Local<v8::Function> bufferConstructor = v8::Local<v8::Function>::Cast(globalObj->Get(v8::String::New("Buffer")));
-            v8::Handle<v8::Value> constructorArgs[3] = { bp->handle_, v8::Integer::New(length), v8::Integer::New(0) };
-            v8::Local<v8::Object> actualBuffer = bufferConstructor->NewInstance(3, constructorArgs);
-
-            //SEND
+          //SEND
+          if(baton->nt.nti.nai.abtUid != NULL){
+            //ISO14443A
             Handle<Value> argv[2] = {
-                String::New("uid"), // event name
-                actualBuffer
-                    //String::New(buffer)
+              String::New("ISO14443A"),
+              makeBuffer(baton->nt.nti.nai.abtUid, baton->nt.nti.nai.szUidLen)
             };
-
             MakeCallback(baton->callback, "emit", 2, argv);
-
-            Handle<Value> argg[2] = {
-                String::New("jumanji"),
-                String::New("Dinosaur")
+          }
+          else if(baton->nt.nti.nfi.abtId != NULL){
+            //FeliCa
+            Handle<Value> argv[4] = {
+              String::New("FeliCa"),
+              makeBuffer(baton->nt.nti.nfi.abtId, 8),
+              makeBuffer(baton->nt.nti.nfi.abtPad, 8),
+              makeBuffer(baton->nt.nti.nfi.abtSysCode, 2)
             };
+            MakeCallback(baton->callback, "emit", 4, argv);
+          }
 
-            MakeCallback(baton->callback, "emit", 2, argg);
 
         }
 
@@ -168,3 +179,4 @@ namespace {
     NODE_MODULE(nfc, init)
 
 }
+
